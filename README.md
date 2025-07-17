@@ -3,7 +3,36 @@
 이번에는 *보험 사기뿐 아니라 사기·자금세탁 등 다양한 이상치 패턴*을 포괄하는 방향으로 작성했습니다.
 
 ---
+## 👥구성원
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/moonstone0514">
+        <img src="https://github.com/moonstone0514.png" width="100px;" alt="moonstone0514"/><br />
+        <sub><b>김문석</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/Hyunsoo1998">
+        <img src="https://github.com/Hyunsoo1998.png" width="100px;" alt="Hyunsoo1998"/><br />
+        <sub><b>김현수</b></sub>
+      </a>
+    </td>
+<td align="center">
+      <a href="https://github.com/GIHYUN-LEE">
+        <img src="https://github.com/GIHYUN-LEE.png" width="100px;" alt="GIHYUN-LEE"/><br />
+        <sub><b>이기현</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/GodNowoon">
+        <img src="https://github.com/GodNowoon.png" width="100px;" alt="godnowoon"/><br />
+        <sub><b>이노운</b></sub>
+      </a>
+    </td>
+  </tr>
 
+---
 # 📌 **이상치 데이터(Outlier Data) 정리**
 
 금융 및 결제 데이터에서 \*\*이상치(outlier)\*\*란
