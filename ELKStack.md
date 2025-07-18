@@ -296,49 +296,55 @@
 특정 패턴을 실시간으로 모니터링합니다.  
 이를 통해 **금융당국**과 협력하여 **위험 요소를 사전에 차단**하는 데 활용할 수 있습니다.
 
-### 🚀 설치 및 실행
+### 🚀 파이프라인 구축 및 실행
 
-1. **데이터 준비**  
-   샘플 데이터를 기반으로 **이상치 거래 데이터**를 생성하여 **Elasticsearch**에 삽입합니다.
-
-2. **Kibana 대시보드 설정**  
-   Kibana를 통해 실시간으로 거래 데이터를 시각화하고,  
-   **이상치 패턴**을 탐지할 수 있는 대시보드를 구성합니다.
-
-3. **filebeat를 이용한 데이터 수집**
-- filebeat.yml 설정
-
-| 수집할 데이터 | 출력 설정 | 필터링 |
-| ------------- | ----------| --------|
-| 우리카드 데이터<br> (edu_data_F)| logstash | 컬럼명 제거 |
-
-
-✨ 컬럼명을 제거하는 이유
-   - filebeat는 파일을 **라인 단위**(한 줄씩)로 읽어와서 message 필드에 문자열 그대로 담아 전송
-   - 컬럼명이 포함된 라인은 분석에 불필요하므로, exclude_lines을 통해 컬럼명이 포함된 라인을 수집 대상에서 제외
-
-<br>
-
-- yml 스크립트
-
-```yml
-
+**1. filebeat를 이용한 데이터 수집**
+- filebeat.yml **input** 설정
+ ```yml
 filebeat.inputs:
 - type: log
   enabled: true
   paths:
     - C:\ce5\00.dataSet\edu_data_F.csv
   exclude_lines: ['^컬럼명']
-
 ```
+  
+| 항목                 | 설정 값 / 설명                                       |
+| ------------------ | ----------------------------------------------- |
+| **type**           | `log` - 로그 파일을 읽는 input 모듈                      |
+| **enabled**        | `true` - input 활성화                              |
+| **paths**          | `C:\ce5\00.dataSet\edu_data_F.csv` - 읽어들일 파일 경로(우리카드 raw data) |
+| **exclude\_lines** | `['^컬럼명']` - csv 헤더 줄 제외                  |
 <br>
 
-4. **logstash를 이용한 데이터 필터링**
+ - filebeat.yml **output** 설정
 
-- conf 스크립트
+1) Elasticsearch Output (**비활성화**)
+
+```yaml
+# output.elasticsearch:
+# hosts: ["localhost:9200"]
+```
+
+* 현재 **주석 처리**되어 비활성화
+* Filebeat가 데이터를 **직접 Elasticsearch로 전송**하는 설정
+
+ 2) Logstash Output (**활성화**)
+
+```yaml
+output.logstash:
+hosts: ["localhost:5044"]
+```
+
+* Filebeat가 수집한 데이터를 **Logstash로 전달**
+* Logstash에서 추가 가공/변환 후 Elasticsearch 등으로 전송 가능
+
+
+<br>
+
+**2. logstash를 이용한 데이터 필터링**
 
 ```yml
-
 input {
   beats {
     port => 5044
@@ -353,8 +359,8 @@ filter {
       "컬럼명1"              => "%{[message][0]}"
       "컬럼명2"              => "%{[message][1]}
         ... 
-      "컬럼명54"             => "%{[message][3]}"
-      "컬럼명55"             => "%{[message][4]}"
+      "컬럼명54"             => "%{[message][53]}"
+      "컬럼명55"             => "%{[message][54]}"
     }
 
 # message 필드 삭제
@@ -379,8 +385,41 @@ output {
     index => "cardfisa"
   }
 }
-
 ```
+
+| 구분       | 항목                        | 설정 값 / 설명 |
+|------------|-----------------------------|----------------|
+| **input**  |  port                        | `5044` - beats 연결용 포트 |
+| **filter** | mutate - split              | `"message", ","` - message 값을 쉼표 기준으로 분할 |
+|            | mutate - add_field          | `컬럼명1` ~ `컬럼명55` 추가 (`message` 배열의 각 인덱스 값 매핑)<br>※ message 인덱스 5, 7, 8, 9 제외<br>(**이상치 데이터에 맞도록 데이터 필터링**) |
+|            | mutate - remove_field       | `["ecs", "host", "@version", "agent", "log", "tags", "input", "message","@timestamp"]` 삭제 |
+|            | mutate - convert            | `"컬럼명"` 필드 → `integer` 형변환 |
+| **output** | stdout - codec              | `rubydebug` - 콘솔에 디버그 형태로 출력 |
+|            | elasticsearch - hosts       | `http://localhost:9200` - Elasticsearch 주소 |
+|            | elasticsearch - index       | `cardfisa` - 저장할 인덱스명 |
+
+
+
+
+## 🗑️ **삭제한 컬럼**
+
+- **삭제 사유:**  
+  데이터 분석 및 모델링 과정에서 **이상치 탐지와 직접적인 상관성이 낮고, 시각화 및 분석 결과에 영향을 미치지 않는 것으로 확인된 컬럼**들을 삭제하였습니다.
+
+- **삭제 근거:**  
+  - **Kibana 시각화 검증:**  
+    해당 컬럼들을 포함한 경우와 제외한 경우를 비교한 결과, **시각화 지표에 영향을 미치지 않는 것이 확인**되었습니다.
+<br>
+
+
+**3. 이상치 데이터 삽입**  
+   샘플 데이터를 기반으로 **이상치 거래 데이터**를 생성하여 **Elasticsearch**에 삽입합니다.
+   
+<br>
+
+**4. Kibana 대시보드 설정**  
+   Kibana를 통해 실시간으로 거래 데이터를 시각화하고,  
+   **이상치 패턴**을 탐지할 수 있는 대시보드를 구성합니다.
 
 ---
 
