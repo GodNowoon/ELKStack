@@ -298,6 +298,82 @@
    Kibana를 통해 실시간으로 거래 데이터를 시각화하고,  
    **이상치 패턴**을 탐지할 수 있는 대시보드를 구성합니다.
 
+3. **filebeat를 이용한 데이터 수집**
+- filebeat.yml 설정
+
+| 수집할 데이터 | 출력 설정 | 필터링 |
+| ------------- | ----------| --------|
+| 우리카드 데이터<br> (edu_data_F)| logstash | 컬럼명 제거 |
+
+
+✨ 컬럼명을 제거하는 이유
+   - filebeat는 파일을 **라인 단위(한 줄씩)**로 읽어와서 message 필드에 문자열 그대로 담아 전송
+   - 컬럼명이 포함된 라인은 분석에 불필요하므로, exclude_lines을 통해 컬럼명이 포함된 라인을 수집 대상에서 제외
+
+<br>
+
+- yml 스크립트
+
+```yml
+
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - C:\ce5\00.dataSet\edu_data_F.csv
+  exclude_lines: ['^컬럼명']
+
+```
+<br>
+
+4. **logstash를 이용한 데이터 필터링**
+
+- conf 스크립트
+
+```yml
+
+input {
+  beats {
+    port => 5044
+  }
+}
+
+# message 인덱스 5, 7, 8, 9 제외 
+filter {
+  mutate {
+    split => ["message", ","]
+    add_field => {
+      "컬럼명1"              => "%{[message][0]}"
+      "컬럼명2"              => "%{[message][1]}
+        ... 
+      "컬럼명54"             => "%{[message][3]}"
+      "컬럼명55"             => "%{[message][4]}"
+    }
+
+# message 필드 삭제
+    remove_field => ["ecs", "host", "@version", "agent", "log", "tags", "input", "message"]
+  }
+
+  mutate {
+    convert => {
+      "컬럼명" => "integer"
+    }
+    remove_field => [ "@timestamp" ]
+  }
+}
+
+output {
+  stdout {
+    codec => rubydebug
+  }
+
+  elasticsearch {
+    hosts => ["http://localhost:9200"]
+    index => "cardfisa"
+  }
+}
+
+```
 
 ---
 
