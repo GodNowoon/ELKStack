@@ -297,7 +297,7 @@
 이를 통해 **금융당국**과 협력하여 **위험 요소를 사전에 차단**하는 데 활용할 수 있습니다.
 
 ### 🚀 파이프라인 구축 및 실행
-<img width="720" height="66" alt="image" src="https://github.com/user-attachments/assets/94bdb413-e54c-450d-a99d-d3b8e84ef409" /><br>
+<img width="941" height="86" alt="그림 drawio" src="https://github.com/user-attachments/assets/51d941eb-830c-4a2e-b707-95bdffdee7a5" />
 
 
 **1. filebeat를 이용한 데이터 수집**
